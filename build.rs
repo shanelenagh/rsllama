@@ -8,8 +8,11 @@ fn main() {
     // Prints instructions for Cargo to link the native library
     println!("cargo:rustc-link-search=native={}/lib", target.display());
     println!("cargo:rustc-link-search=native={}/build/Debug", target.display());
+    println!("cargo:rustc-link-search=native={}/build/shared/src/Debug", target.display());
+    println!("cargo:rustc-link-search=native={}/build/shared/ggml/src/Debug", target.display());
+    println!("cargo:rustc-link-search=native={}/build/shared/ggml/src/ggml-cuda/Debug", target.display());
     println!("cargo:rustc-link-lib=static=rsllama"); 
-
+    println!("cargo:rustc-link-lib=static=llama"); 
 
     /*
      * Bindgen mapping

@@ -1,22 +1,19 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
+#![allow(unnecessary_transmutes)]
+#![allow(unsafe_op_in_unsafe_fn)]
 use std::{ffi::CString, os::raw::c_char};
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-// unsafe extern "C" {
-//     fn hellothere(name: *const i8);
-// }
+include!(concat!(env!("OUT_DIR"), "/bindings.rs")); // llama.cpp bindings
 
 pub unsafe fn convert_str(input: &str) -> *mut c_char {
     return CString::new(input).unwrap().into_raw();
 }
 
 fn main() {
-    println!("About to call into C++");
     unsafe {
-        let s_ptr = convert_str("Shane");
-        hellothere(s_ptr);
-        drop(CString::from_raw(s_ptr));
+        let model_params: llama_model_params = llama_model_default_params();
+        start_llama(convert_str("granite-3.3-2b-instruct-Q5_1.gguf"), model_params);
     }
 }
