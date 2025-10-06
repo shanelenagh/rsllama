@@ -15,6 +15,9 @@ static const struct llama_vocab* vocab = NULL;
 std::atomic<bool> ok_to_generate;
 std::mutex state_change_mutex;
 
+FFI_EXPORT void hellothere(char* name) {
+    fprintf(stdout, "Hi, from C/CPP, %s.\n", name);
+}
 
 FFI_EXPORT void start_llama(char* path_model, struct llama_model_params model_params) {
     // start model backend

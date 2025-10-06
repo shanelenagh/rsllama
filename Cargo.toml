@@ -9,3 +9,7 @@ cty = "0.2.2"
 
 [build-dependencies]
 cmake = "0.1"
+#bindgen = "0.71.0"
+#env = "1.0.1"
+#time = "0.3.44"
+#path = "0.8.2"
