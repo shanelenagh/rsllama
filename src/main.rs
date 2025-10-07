@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 #![allow(unnecessary_transmutes)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use std::{ffi::CString, os::raw::c_char};
+use std::{io, io::BufRead, ffi::CString, os::raw::c_char};
 use argh::FromArgs;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs")); // bindgen llama.cpp bindings
@@ -16,7 +16,10 @@ struct LlamaArgs {
     model: String,
     /// prompt or question to ask model (leaving out causes it to read from stdin)
     #[argh(option, short='p')]
-    prompt: Option<String>
+    prompt: Option<String>,
+    /// token count
+    #[argh(option, short='t', default="1000")]
+    tokens: i32
 }
 
 pub unsafe fn convert_str(input: &str) -> *mut c_char {
@@ -29,12 +32,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut model_params: llama_model_params = llama_model_default_params();
         model_params.n_gpu_layers = 99;
         start_llama(convert_str(&args.model), model_params);
-        if let Some(prompt) = args.prompt {
-            let model_context: llama_context_params = llama_context_default_params();
-            let sampler_params: llama_sampler_chain_params = llama_sampler_chain_default_params();
+        let model_context: llama_context_params = llama_context_default_params();
+        let sampler_params: llama_sampler_chain_params = llama_sampler_chain_default_params();        
+        if let Some(prompt) = args.prompt { // Single prompt given
             println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, prompt);
-            let result = run_generation(convert_str(&prompt), 1000, model_context, sampler_params);
+            let result = run_generation(convert_str(&prompt), args.tokens, model_context, sampler_params);
             println!("Got result: {}", CString::from_raw(result).into_string()?);
+        } else {                            // No prompt given ==> Read lines from stdin
+            let stdin_handle = io::stdin().lock();
+            println!(">>>> Enter prompt/question:");
+            for line_result in stdin_handle.lines() {
+                let line = line_result?;
+                if line.trim().is_empty() {
+                    break;
+                }
+                println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, line);
+                let result = run_generation(convert_str(&line), args.tokens, model_context, sampler_params);
+                println!("Got result: {}", CString::from_raw(result).into_string()?);
+                println!(">>>> Enter next prompt/question:");
+            }
         }
     }
     Ok(())
