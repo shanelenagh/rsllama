@@ -1,8 +1,3 @@
-#![allow(non_upper_case_globals)]
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
-#![allow(unnecessary_transmutes)]
-#![allow(unsafe_op_in_unsafe_fn)]
 use std::{io, io::BufRead, ffi::CString, os::raw::c_char};
 use argh::FromArgs;
 
@@ -38,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, prompt);
             let result = run_generation(convert_str(&prompt), args.tokens, model_context, sampler_params);
             println!("Got result: {}", CString::from_raw(result).into_string()?);
-        } else {                            // No prompt given ==> Read lines from stdin
+        } else { // No prompt given ==> Read lines from stdin
             let stdin_handle = io::stdin().lock();
             println!(">>>> Enter prompt/question:");
             for line_result in stdin_handle.lines() {
@@ -52,6 +47,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!(">>>> Enter next prompt/question:");
             }
         }
+        stop_llama();
     }
     Ok(())
 }

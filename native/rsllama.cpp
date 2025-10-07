@@ -15,10 +15,6 @@ static const struct llama_vocab* vocab = NULL;
 std::atomic<bool> ok_to_generate;
 std::mutex state_change_mutex;
 
-FFI_EXPORT void hellothere(char* name) {
-    fprintf(stdout, "Hi, from C/CPP, %s.\n", name);
-}
-
 FFI_EXPORT void start_llama(char* path_model, struct llama_model_params model_params) {
     // start model backend
     ggml_backend_load_all();
@@ -29,14 +25,13 @@ FFI_EXPORT void start_llama(char* path_model, struct llama_model_params model_pa
     ok_to_generate.store(true);
 }
 
-FFI_EXPORT void stop_llama(char* path_model, struct llama_model_params model_params) {
+FFI_EXPORT void stop_llama() {
     ok_to_generate.store(false);
     state_change_mutex.lock();
     llama_model_free(model);
 }
 
 FFI_EXPORT char* run_generation(char* promptc, int n_predict, struct llama_context_params context_params, struct llama_sampler_chain_params sampler_params) {
-
     std::string prompt(promptc);
 
     if (model == NULL || vocab == NULL) {
@@ -122,39 +117,4 @@ FFI_EXPORT char* run_generation(char* promptc, int n_predict, struct llama_conte
     char *result_copy = new char[generation.size() + 1];
     strcpy(result_copy, generation.c_str());
     return result_copy;
-}
-
-FFI_EXPORT struct llama_model_params get_default_model_params() {
-    return llama_model_default_params();
-}
-
-FFI_EXPORT struct llama_context_params get_default_context_params() {
-    return llama_context_default_params();
-}
-
-FFI_EXPORT struct llama_sampler_chain_params get_default_sampler_params() {
-    return llama_sampler_chain_default_params();
-}
-
-FFI_EXPORT void free_string(char* str) {
-    delete str;
-}
-
-int main(int argc, char** argv) {
-    if (argc < 4) {
-        error:
-            fprintf(stderr, "Usage: %s <path_to_model> <prompt> <max_tokens>\n", argv[0]);
-            return 1;
-    }
-
-    llama_model_params mparams = get_default_model_params();
-    mparams.n_gpu_layers = 99;
-    start_llama(argv[1], mparams);
-    char* result = run_generation(argv[2], atoi(argv[3]), get_default_context_params(), get_default_sampler_params());
-    if (result == NULL) {
-        goto error;
-    }
-    printf("Generated text from executable: %s\n", result);
-
-    return 0;
 }
