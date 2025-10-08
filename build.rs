@@ -1,18 +1,30 @@
 extern crate cmake;
+use std::{fs, path::Path};
+use glob::glob;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let target = cmake::Config::new("native")
         .define("LLAMA_CURL", "OFF")
         .build();
 
     // Prints instructions for Cargo to link the native library
     println!("cargo:rustc-link-search=native={}/lib", target.display());
-    println!("cargo:rustc-link-search=native={}/build/Debug", target.display());
-    println!("cargo:rustc-link-search=native={}/build/shared/src/Debug", target.display());
-    println!("cargo:rustc-link-search=native={}/build/shared/ggml/src/Debug", target.display());
-    println!("cargo:rustc-link-search=native={}/build/shared/ggml/src/ggml-cuda/Debug", target.display());
+    println!("cargo:rustc-link-search=native={}/build/{}", target.display(), if env::var("DEBUG").unwrap() == "true" { "Debug" } else { "Release" });
+    println!("cargo:rustc-link-search=native={}/build/shared/src/{}", target.display(), if env::var("DEBUG").unwrap() == "true" { "Debug" } else { "Release" });
     println!("cargo:rustc-link-lib=static=rsllama"); 
     println!("cargo:rustc-link-lib=static=llama"); 
+
+    // Copy dependency lib's to ./target/{releaseType}
+    let build_type_dir = if env::var("DEBUG").unwrap() == "true" { "Debug" } else { "Release" };
+    let source_pattern = format!("{}/build/{}/*.*", target.display(), build_type_dir);
+    for entry in glob(&source_pattern)? {
+        let path = entry?;
+        let file_name = path.file_name().ok_or("Invalid file name")?;
+        let destination_path = Path::new(&("./target/".to_owned() + build_type_dir)).join(file_name);
+        eprintln!("Copying {:?} to {:?}", &path, &destination_path);
+        let _ = fs::copy(&path, &destination_path);
+    }
+
 
     /*
      * Bindgen mapping
@@ -38,4 +50,6 @@ fn main() {
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+
+    Ok(())
 }
