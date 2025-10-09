@@ -1,14 +1,10 @@
 use std::{io, io::BufRead, ffi::CString, os::raw::c_char};
 use argh::FromArgs;
-#[allow(non_upper_case_globals)]
-#[allow(non_camel_case_types)]
-#[allow(non_snake_case)]
-#[allow(unused_imports)]
-#[allow(unnecessary_transmutes)]
-#[allow(unsafe_op_in_unsafe_fn)]
-#[allow(dead_code)]
+// Suppress warnings from the crappy auto-generated llama.cpp binding code from bindgen
+#[allow(non_upper_case_globals, non_camel_case_types, non_snake_case, unused_imports,
+    unnecessary_transmutes, unsafe_op_in_unsafe_fn, dead_code)]
 mod llama {
-    include!(concat!(env!("OUT_DIR"), "/bindings.rs")); // bindgen llama.cpp bindings
+    include!(concat!(env!("OUT_DIR"), "/bindings.rs")); // llama.cpp bindgen bindings generated from build.rs
 }
 use llama::{
     llama_model_default_params, llama_context_default_params, llama_sampler_chain_default_params, 
