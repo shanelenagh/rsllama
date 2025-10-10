@@ -8,7 +8,7 @@ mod llama {
 }
 use llama::{
     llama_model_default_params, llama_context_default_params, llama_sampler_chain_default_params, 
-    start_llama, stop_llama, run_generation
+    llama_context_params, llama_sampler_chain_params, start_llama, stop_llama, run_generation
 };
 
 
@@ -36,12 +36,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut model_params = llama_model_default_params();
         model_params.n_gpu_layers = 99;
         start_llama(convert_str(&args.model), model_params);
-        let model_context = llama_context_default_params();
-        let sampler_params = llama_sampler_chain_default_params();        
-        if let Some(prompt) = args.prompt { // Single prompt given
-            println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, prompt);
-            let result = run_generation(convert_str(&prompt), args.tokens, model_context, sampler_params);
-            println!("Got result: {}", CString::from_raw(result).into_string()?);
+        let model_context: llama_context_params = llama_context_default_params();
+        let sampler_params: llama_sampler_chain_params = llama_sampler_chain_default_params();        
+        if let Some(ref prompt) = args.prompt { // Single prompt given
+            let _ = run_llama(&prompt, &args, &model_context, &sampler_params);
         } else { // No prompt given ==> Read lines from stdin
             let stdin_handle = io::stdin().lock();
             println!(">>>> Enter prompt/question:");
@@ -50,13 +48,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if line.trim().is_empty() {
                     break;
                 }
-                println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, line);
-                let result = run_generation(convert_str(&line), args.tokens, model_context, sampler_params);
-                println!("Got result: {}", CString::from_raw(result).into_string()?);
+                let _ = run_llama(&line, &args, &model_context, &sampler_params);
                 println!(">>>> Enter next prompt/question:");
             }
         }
         stop_llama();
+    }
+    Ok(())
+}
+
+fn run_llama(prompt: &str, args: &LlamaArgs, model_context: &llama_context_params, sampler_params: &llama_sampler_chain_params) -> Result<(), Box<dyn std::error::Error>> {
+    println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, prompt);
+    unsafe {
+        let result = run_generation(convert_str(prompt), args.tokens, *model_context, *sampler_params);
+        println!("Got result: {}", CString::from_raw(result).into_string()?);
     }
     Ok(())
 }
