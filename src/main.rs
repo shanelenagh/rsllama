@@ -26,7 +26,7 @@ struct LlamaArgs {
     tokens: i32
 }
 
-pub unsafe fn convert_str(input: &str) -> *mut c_char {
+unsafe fn convert_str(input: &str) -> *mut c_char {
     return CString::new(input).unwrap().into_raw();
 }
 
