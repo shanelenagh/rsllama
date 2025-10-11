@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!(">>>> Enter prompt/question:");
             for line_result in stdin_handle.lines() {
                 let line = line_result?;
-                if line.trim().is_empty() {
+                if line.trim().is_empty() { // Let empty input be a trigger to exit
                     break;
                 }
                 let _ = run_llama(&line, &args, &model_context, &sampler_params);
