@@ -6,10 +6,6 @@ use argh::FromArgs;
 mod llama {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs")); // llama.cpp bindgen bindings generated from build.rs
 }
-use llama::{
-    llama_model_default_params, llama_context_default_params, llama_sampler_chain_default_params, 
-    llama_context_params, llama_sampler_chain_params, start_llama, stop_llama, run_generation
-};
 
 
 #[derive(FromArgs)]
@@ -33,11 +29,11 @@ unsafe fn convert_str(input: &str) -> *mut c_char {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: LlamaArgs = argh::from_env();
     unsafe {
-        let mut model_params = llama_model_default_params();
+        let mut model_params = llama::llama_model_default_params();
         model_params.n_gpu_layers = 99;
-        start_llama(convert_str(&args.model), model_params);
-        let model_context: llama_context_params = llama_context_default_params();
-        let sampler_params: llama_sampler_chain_params = llama_sampler_chain_default_params();        
+        llama::start_llama(convert_str(&args.model), model_params);
+        let model_context: llama::llama_context_params = llama::llama_context_default_params();
+        let sampler_params: llama::llama_sampler_chain_params = llama::llama_sampler_chain_default_params();        
         if let Some(ref prompt) = args.prompt { // Single prompt given
             let _ = run_llama(&prompt, &args, &model_context, &sampler_params);
         } else { // No prompt given ==> Read lines from stdin
@@ -52,15 +48,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!(">>>> Enter next prompt/question:");
             }
         }
-        stop_llama();
+        llama::stop_llama();
     }
     Ok(())
 }
 
-fn run_llama(prompt: &str, args: &LlamaArgs, model_context: &llama_context_params, sampler_params: &llama_sampler_chain_params) -> Result<(), Box<dyn std::error::Error>> {
+fn run_llama(prompt: &str, args: &LlamaArgs, model_context: &llama::llama_context_params, sampler_params: &llama::llama_sampler_chain_params) -> Result<(), Box<dyn std::error::Error>> {
     println!(">>>>>>>>>> about to run gen for model [{}] and prompt [{}]", args.model, prompt);
     unsafe {
-        let result = run_generation(convert_str(prompt), args.tokens, *model_context, *sampler_params);
+        let result = llama::run_generation(convert_str(prompt), args.tokens, *model_context, *sampler_params);
         println!("Got result: {}", CString::from_raw(result).into_string()?);
     }
     Ok(())
