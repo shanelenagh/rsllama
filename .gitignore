@@ -1,2 +1,3 @@
 /target
 *.gguf
+.vscode/settings.json
